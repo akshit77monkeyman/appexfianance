@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appex Finance — EMI, Auto-Pay Scheduler &amp; Margin-Safe Discounts</title>
+<style>
+  :root{
+    --ink:#0d2b2e;
+    --paper:#f6f3ea;
+    --teal:#0f4c46;
+    --teal-deep:#0a3330;
+    --brass:#b8863b;
+    --brass-light:#e8c789;
+    --line:#d8d0ba;
+    --danger:#8c3a2b;
+    --ok:#2f6b3a;
+    --white:#fffefb;
+    --shadow:0 10px 30px rgba(13,43,46,.12);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Iowan Old Style','Georgia',serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .sans{font-family:'Helvetica Neue',Arial,sans-serif;}
+
+  /* ===== Header / Ledger band ===== */
+  header{
+    background:linear-gradient(180deg,var(--teal-deep),var(--teal));
+    color:var(--white);
+    padding:34px 6vw 26px;
+    position:relative;
+    overflow:hidden;
+  }
+  header::after{
+    content:"";
+    position:absolute; left:0; right:0; bottom:0; height:6px;
+    background:repeating-linear-gradient(90deg,var(--brass) 0 18px, transparent 18px 24px);
+    opacity:.8;
+  }
+  .brandrow{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;}
+  .brand{display:flex; align-items:center; gap:14px;}
+  .mark{
+    width:46px;height:46px; border:2px solid var(--brass-light); border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Helvetica Neue',Arial,sans-serif; font-weight:700; letter-spacing:.5px;
+    color:var(--brass-light); font-size:18px;
+  }
+  .brand h1{margin:0; font-size:26px; letter-spacing:.5px; font-weight:600;}
+  .brand p.tag{margin:2px 0 0; font-family:'Helvetica Neue',Arial,sans-serif; font-size:12px; letter-spacing:2.5px; text-transform:uppercase; color:var(--brass-light); opacity:.9;}
+  nav.tabs{display:flex; gap:6px; flex-wrap:wrap;}
+  nav.tabs button{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    background:transparent; border:1px solid rgba(255,255,255,.35); color:var(--white);
+    padding:9px 16px; border-radius:999px; font-size:13px; letter-spacing:.4px; cursor:pointer;
+    transition:.2s ease;
+  }
+  nav.tabs button:hover{border-color:var(--brass-light);}
+  nav.tabs button.active{background:var(--brass); border-color:var(--brass); color:var(--teal-deep); font-weight:700;}
+
+  main{max-width:980px; margin:0 auto; padding:40px 6vw 90px;}
+  section.panel{display:none;}
+  section.panel.active{display:block; animation:rise .35s ease;}
+  @keyframes rise{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+
+  .eyebrow{font-family:'Helvetica Neue',Arial,sans-serif; text-transform:uppercase; letter-spacing:3px; font-size:11.5px; color:var(--brass); font-weight:700; margin:0 0 6px;}
+  h2.title{margin:0 0 6px; font-size:30px; font-weight:600;}
+  p.lede{margin:0 0 28px; color:#3d5250; max-width:60ch; line-height:1.55;}
+
+  .card{
+    background:var(--white); border:1px solid var(--line); border-radius:14px;
+    padding:26px 28px; box-shadow:var(--shadow);
+  }
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:22px;}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr;}}
+
+  label{
+    display:block; font-family:'Helvetica Neue',Arial,sans-serif; font-size:12px;
+    text-transform:uppercase; letter-spacing:1px; color:#5a6e6c; margin-bottom:6px; font-weight:600;
+  }
+  .field{margin-bottom:18px;}
+  input[type=text], input[type=number], input[type=date], select{
+    width:100%; padding:11px 13px; border:1px solid var(--line); border-radius:8px;
+    font-family:'Helvetica Neue',Arial,sans-serif; font-size:15px; color:var(--ink);
+    background:#fcfbf7; transition:.2s;
+  }
+  input:focus, select:focus{outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(15,76,70,.12);}
+  .hint{font-family:'Helvetica Neue',Arial,sans-serif; font-size:12px; color:#7a8b89; margin-top:5px;}
+
+  .btn{
+    font-family:'Helvetica Neue',Arial,sans-serif; font-weight:700; letter-spacing:.4px;
+    background:var(--teal); color:var(--white); border:none; padding:13px 24px;
+    border-radius:8px; cursor:pointer; font-size:14px; transition:.2s;
+  }
+  .btn:hover{background:var(--teal-deep);}
+  .btn.gold{background:var(--brass); color:var(--teal-deep);}
+  .btn.gold:hover{background:#a3742f;}
+  .btn.outline{background:transparent; border:1.5px solid var(--teal); color:var(--teal);}
+  .btn.outline:hover{background:var(--teal); color:var(--white);}
+
+  /* Result ledger */
+  .results{margin-top:24px; border-top:2px solid var(--ink); padding-top:18px;}
+  .resultline{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:9px 0; border-bottom:1px dotted var(--line);
+    font-family:'Helvetica Neue',Arial,sans-serif;
+  }
+  .resultline .k{color:#4a5f5d; font-size:13.5px;}
+  .resultline .v{font-weight:700; font-size:16px;}
+  .resultline.big .v{font-size:26px; color:var(--teal-deep); font-family:'Iowan Old Style',Georgia,serif;}
+
+  table.amort{width:100%; border-collapse:collapse; margin-top:22px; font-family:'Helvetica Neue',Arial,sans-serif; font-size:13px;}
+  table.amort th{
+    text-align:right; background:var(--teal); color:var(--white); padding:9px 10px;
+    text-transform:uppercase; letter-spacing:.5px; font-size:11px; position:sticky; top:0;
+  }
+  table.amort th:first-child, table.amort td:first-child{text-align:left;}
+  table.amort td{text-align:right; padding:8px 10px; border-bottom:1px solid var(--line);}
+  table.amort tr:nth-child(even) td{background:#faf8f1;}
+  .tablewrap{max-height:340px; overflow:auto; border:1px solid var(--line); border-radius:10px; margin-top:10px;}
+
+  /* Scheduler list */
+  .lender-list{margin-top:26px; display:flex; flex-direction:column; gap:12px;}
+  .lender-item{
+    display:flex; justify-content:space-between; align-items:center; gap:14px;
+    background:#fcfbf7; border:1px solid var(--line); border-radius:10px; padding:14px 18px;
+    font-family:'Helvetica Neue',Arial,sans-serif; flex-wrap:wrap;
+  }
+  .lender-item .who{font-weight:700; color:var(--teal-deep);}
+  .lender-item .meta{font-size:12.5px; color:#6a7c7a;}
+  .status-pill{font-size:11px; padding:4px 10px; border-radius:999px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;}
+  .status-pill.scheduled{background:#e4efe1; color:var(--ok);}
+  .status-pill.due{background:#f6e3c9; color:var(--brass);}
+  .status-pill.paid{background:#dfeee0; color:var(--ok);}
+  .status-pill.overdue{background:#f5ddd8; color:var(--danger);}
+  .lender-item button{
+    font-family:'Helvetica Neue',Arial,sans-serif; font-size:12px; padding:7px 13px; border-radius:7px;
+    border:1px solid var(--teal); background:transparent; color:var(--teal); cursor:pointer; font-weight:700;
+  }
+  .lender-item button:hover{background:var(--teal); color:var(--white);}
+  .lender-item button.remove{border-color:var(--danger); color:var(--danger);}
+  .lender-item button.remove:hover{background:var(--danger); color:var(--white);}
+
+  .notice{
+    background:#fdf6e6; border:1px solid var(--brass-light); border-left:4px solid var(--brass);
+    padding:14px 18px; border-radius:8px; font-family:'Helvetica Neue',Arial,sans-serif; font-size:13px;
+    color:#5a4a22; line-height:1.6; margin-top:22px;
+  }
+  .notice strong{color:var(--brass);}
+
+  /* Discount tool */
+  .safe-badge{
+    display:inline-block; padding:5px 12px; border-radius:999px; font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
+  }
+  .safe-badge.safe{background:#e4efe1; color:var(--ok);}
+  .safe-badge.risk{background:#f5ddd8; color:var(--danger);}
+
+  .bar-outer{height:14px; background:#eee7d4; border-radius:999px; overflow:hidden; margin-top:8px;}
+  .bar-inner{height:100%; background:linear-gradient(90deg,var(--brass),var(--teal)); border-radius:999px; transition:width .4s ease;}
+
+  footer{
+    text-align:center; padding:26px; font-family:'Helvetica Neue',Arial,sans-serif; font-size:12px;
+    color:#7a8b89; border-top:1px solid var(--line); background:var(--white);
+  }
+  @media(prefers-reduced-motion: reduce){*{animation:none !important; transition:none !important;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brandrow">
+    <div class="brand">
+      <div class="mark">AF</div>
+      <div>
+        <h1>Appex Finance</h1>
+        <p class="tag">Loans &middot; Repayment &middot; Fair Margins</p>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="active" data-tab="emi">EMI Calculator</button>
+      <button data-tab="autopay">Auto-Pay Scheduler</button>
+      <button data-tab="discount">Shopkeeper Discount</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- ===================== EMI CALCULATOR ===================== -->
+  <section class="panel active" id="emi">
+    <p class="eyebrow">01 — Loan Tools</p>
+    <h2 class="title">EMI Calculator</h2>
+    <p class="lede">Work out your monthly instalment, total interest, and the full repayment schedule for any loan amount, rate, and tenure.</p>
+
+    <div class="card">
+      <div class="grid2">
+        <div class="field">
+          <label for="principal">Loan Amount (₹)</label>
+          <input type="number" id="principal" value="500000" min="0" step="1000">
+        </div>
+        <div class="field">
+          <label for="rate">Annual Interest Rate (%)</label>
+          <input type="number" id="rate" value="10.5" min="0" step="0.05">
+        </div>
+        <div class="field">
+          <label for="tenure">Tenure</label>
+          <input type="number" id="tenure" value="36" min="1" step="1">
+        </div>
+        <div class="field">
+          <label for="tenureUnit">Tenure Unit</label>
+          <select id="tenureUnit">
+            <option value="months" selected>Months</option>
+            <option value="years">Years</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn" onclick="calcEMI()">Calculate EMI</button>
+
+      <div class="results" id="emiResults" style="display:none;">
+        <div class="resultline big"><span class="k">Monthly EMI</span><span class="v" id="emiValue">₹0</span></div>
+        <div class="resultline"><span class="k">Total Interest Payable</span><span class="v" id="emiInterest">₹0</span></div>
+        <div class="resultline"><span class="k">Total Amount Payable</span><span class="v" id="emiTotal">₹0</span></div>
+        <div class="resultline"><span class="k">Number of Instalments</span><span class="v" id="emiCount">0</span></div>
+      </div>
+
+      <div id="amortWrap" style="display:none;">
+        <div class="tablewrap">
+          <table class="amort">
+            <thead><tr><th>#</th><th>EMI</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead>
+            <tbody id="amortBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== AUTO-PAY SCHEDULER ===================== -->
+  <section class="panel" id="autopay">
+    <p class="eyebrow">02 — Loan Tools</p>
+    <h2 class="title">Auto-Pay Scheduler</h2>
+    <p class="lede">Set up recurring EMI reminders for every lender so nothing is ever missed. Payments are logged here and marked paid on the due date.</p>
+
+    <div class="notice">
+      <strong>Please note:</strong> moving real money on your behalf (an actual bank auto-debit) requires a registered payment gateway and a NACH/UPI Autopay mandate with your bank — this cannot be done safely from a webpage alone, and no legitimate finance app would attempt it without that backend and your explicit mandate. What this tool <em>does</em> do is track every lender, due date, and EMI amount, and give you a one-click "Mark Paid" ledger and due-date reminders, so you can hand the actual transfer to your bank's autopay/NACH mandate or UPI Autopay with full confidence in the numbers.
+    </div>
+
+    <div class="card" style="margin-top:22px;">
+      <div class="grid2">
+        <div class="field">
+          <label for="lenderName">Lender Name</label>
+          <input type="text" id="lenderName" placeholder="e.g. HDFC Bank">
+        </div>
+        <div class="field">
+          <label for="lenderAmount">EMI Amount (₹)</label>
+          <input type="number" id="lenderAmount" placeholder="15000">
+        </div>
+        <div class="field">
+          <label for="lenderDate">Next Due Date</label>
+          <input type="date" id="lenderDate">
+        </div>
+        <div class="field">
+          <label for="lenderFreq">Frequency</label>
+          <select id="lenderFreq">
+            <option value="monthly" selected>Monthly</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="weekly">Weekly</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn gold" onclick="addLender()">Add to Schedule</button>
+      <div class="hint">Saved locally in this browser — nothing is sent anywhere.</div>
+
+      <div class="lender-list" id="lenderList"></div>
+    </div>
+  </section>
+
+  <!-- ===================== DISCOUNT CALCULATOR ===================== -->
+  <section class="panel" id="discount">
+    <p class="eyebrow">03 — Merchant Tools</p>
+    <h2 class="title">Margin-Safe Discount Calculator</h2>
+    <p class="lede">Find the maximum discount you can offer on a product while still covering your cost — so every sale, even a discounted one, stays profitable.</p>
+
+    <div class="card">
+      <div class="grid2">
+        <div class="field">
+          <label for="costPrice">Cost Price (₹)</label>
+          <input type="number" id="costPrice" value="400" min="0" step="1">
+        </div>
+        <div class="field">
+          <label for="sellPrice">Marked Selling Price (₹)</label>
+          <input type="number" id="sellPrice" value="600" min="0" step="1">
+        </div>
+        <div class="field">
+          <label for="minMargin">Minimum Margin You Want to Keep (%)</label>
+          <input type="number" id="minMargin" value="10" min="0" step="0.5">
+        </div>
+        <div class="field">
+          <label for="wantDiscount">Discount You Plan to Offer (%)</label>
+          <input type="number" id="wantDiscount" value="15" min="0" step="0.5">
+        </div>
+      </div>
+      <button class="btn" onclick="calcDiscount()">Check This Discount</button>
+
+      <div class="results" id="discResults" style="display:none;">
+        <div class="resultline"><span class="k">Break-even Discount (0% margin)</span><span class="v" id="breakEvenDisc">0%</span></div>
+        <div class="resultline"><span class="k">Max Discount at Your Minimum Margin</span><span class="v" id="maxSafeDisc">0%</span></div>
+        <div class="resultline"><span class="k">Price After Your Planned Discount</span><span class="v" id="finalPrice">₹0</span></div>
+        <div class="resultline"><span class="k">Profit / Loss Per Unit</span><span class="v" id="profitPerUnit">₹0</span></div>
+        <div class="resultline big"><span class="k">Verdict</span><span class="v"><span class="safe-badge" id="verdictBadge">—</span></span></div>
+        <div class="bar-outer"><div class="bar-inner" id="marginBar" style="width:0%"></div></div>
+        <div class="hint" style="margin-top:6px;">Bar shows your planned discount relative to the break-even point.</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>Appex Finance — a planning &amp; scheduling aid. Figures are estimates; confirm exact terms with your lender before relying on them.</footer>
+
+<script>
+/* ---------- Tabs ---------- */
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('section.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ---------- EMI Calculator ---------- */
+function calcEMI(){
+  const P = parseFloat(document.getElementById('principal').value) || 0;
+  const annualRate = parseFloat(document.getElementById('rate').value) || 0;
+  let n = parseFloat(document.getElementById('tenure').value) || 0;
+  const unit = document.getElementById('tenureUnit').value;
+  if(unit === 'years') n = n * 12;
+
+  const r = annualRate / 12 / 100;
+  let emi;
+  if(r === 0){
+    emi = P / n;
+  } else {
+    emi = P * r * Math.pow(1+r, n) / (Math.pow(1+r, n) - 1);
+  }
+  const totalPayment = emi * n;
+  const totalInterest = totalPayment - P;
+
+  document.getElementById('emiResults').style.display = 'block';
+  document.getElementById('emiValue').textContent = formatINR(emi);
+  document.getElementById('emiInterest').textContent = formatINR(totalInterest);
+  document.getElementById('emiTotal').textContent = formatINR(totalPayment);
+  document.getElementById('emiCount').textContent = Math.round(n);
+
+  // amortization schedule
+  let balance = P;
+  let rows = '';
+  for(let i=1;i<=n;i++){
+    const interestPart = balance * r;
+    let principalPart = emi - interestPart;
+    balance -= principalPart;
+    if(i === n){ principalPart += balance; balance = 0; } // clean last row rounding
+    rows += `<tr><td>${i}</td><td>${formatINR(emi)}</td><td>${formatINR(principalPart)}</td><td>${formatINR(interestPart)}</td><td>${formatINR(Math.max(balance,0))}</td></tr>`;
+  }
+  document.getElementById('amortBody').innerHTML = rows;
+  document.getElementById('amortWrap').style.display = 'block';
+}
+
+function formatINR(num){
+  if(isNaN(num) || !isFinite(num)) return '₹0';
+  return '₹' + num.toLocaleString('en-IN', {maximumFractionDigits:0});
+}
+
+/* ---------- Auto-Pay Scheduler ---------- */
+const STORAGE_KEY = 'appexfinance_lenders_v1';
+
+function loadLenders(){
+  try{
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  }catch(e){ return []; }
+}
+function saveLenders(list){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
+function addLender(){
+  const name = document.getElementById('lenderName').value.trim();
+  const amount = parseFloat(document.getElementById('lenderAmount').value);
+  const date = document.getElementById('lenderDate').value;
+  const freq = document.getElementById('lenderFreq').value;
+
+  if(!name || !amount || !date){
+    alert('Please fill in lender name, EMI amount, and due date.');
+    return;
+  }
+  const list = loadLenders();
+  list.push({id: Date.now(), name, amount, date, freq, paid:false});
+  saveLenders(list);
+  document.getElementById('lenderName').value = '';
+  document.getElementById('lenderAmount').value = '';
+  document.getElementById('lenderDate').value = '';
+  renderLenders();
+}
+
+function markPaid(id){
+  const list = loadLenders();
+  const item = list.find(x=>x.id === id);
+  if(item){
+    item.paid = true;
+    // roll forward the due date automatically for next cycle
+    const d = new Date(item.date);
+    if(item.freq === 'monthly') d.setMonth(d.getMonth()+1);
+    if(item.freq === 'quarterly') d.setMonth(d.getMonth()+3);
+    if(item.freq === 'weekly') d.setDate(d.getDate()+7);
+    item.date = d.toISOString().slice(0,10);
+    item.paid = false; // reset for the new cycle
+  }
+  saveLenders(list);
+  renderLenders();
+}
+
+function removeLender(id){
+  let list = loadLenders();
+  list = list.filter(x=>x.id !== id);
+  saveLenders(list);
+  renderLenders();
+}
+
+function statusFor(item){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const due = new Date(item.date); due.setHours(0,0,0,0);
+  const diffDays = Math.round((due-today)/(1000*60*60*24));
+  if(diffDays < 0) return {label:'Overdue', cls:'overdue'};
+  if(diffDays === 0) return {label:'Due Today', cls:'due'};
+  if(diffDays <= 3) return {label:'Due Soon', cls:'due'};
+  return {label:'Scheduled', cls:'scheduled'};
+}
+
+function renderLenders(){
+  const list = loadLenders();
+  const wrap = document.getElementById('lenderList');
+  if(list.length === 0){
+    wrap.innerHTML = '<div class="hint">No lenders scheduled yet — add one above.</div>';
+    return;
+  }
+  list.sort((a,b)=> new Date(a.date) - new Date(b.date));
+  wrap.innerHTML = list.map(item=>{
+    const s = statusFor(item);
+    return `<div class="lender-item">
+      <div>
+        <div class="who">${escapeHtml(item.name)} — ${formatINR(item.amount)}</div>
+        <div class="meta">Due ${item.date} &middot; ${item.freq} &middot; <span class="status-pill ${s.cls}">${s.label}</span></div>
+      </div>
+      <div>
+        <button onclick="markPaid(${item.id})">Mark Paid</button>
+        <button class="remove" onclick="removeLender(${item.id})">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+renderLenders();
+
+/* ---------- Shopkeeper Discount Calculator ---------- */
+function calcDiscount(){
+  const cost = parseFloat(document.getElementById('costPrice').value) || 0;
+  const sell = parseFloat(document.getElementById('sellPrice').value) || 0;
+  const minMargin = parseFloat(document.getElementById('minMargin').value) || 0;
+  const wantDisc = parseFloat(document.getElementById('wantDiscount').value) || 0;
+
+  if(sell <= 0){
+    alert('Enter a valid marked selling price.');
+    return;
+  }
+
+  // Break-even discount: price falls exactly to cost price
+  const breakEvenDiscPct = ((sell - cost) / sell) * 100;
+
+  // Max safe discount: price falls to cost + minMargin% of cost
+  const floorPrice = cost * (1 + minMargin/100);
+  const maxSafeDiscPct = ((sell - floorPrice) / sell) * 100;
+
+  const finalPrice = sell * (1 - wantDisc/100);
+  const profitPerUnit = finalPrice - cost;
+
+  document.getElementById('discResults').style.display = 'block';
+  document.getElementById('breakEvenDisc').textContent = breakEvenDiscPct.toFixed(1) + '%';
+  document.getElementById('maxSafeDisc').textContent = (maxSafeDiscPct > 0 ? maxSafeDiscPct.toFixed(1) : '0.0') + '%';
+  document.getElementById('finalPrice').textContent = formatINR(finalPrice);
+  document.getElementById('profitPerUnit').textContent = (profitPerUnit >= 0 ? '+' : '') + formatINR(profitPerUnit);
+
+  const badge = document.getElementById('verdictBadge');
+  if(profitPerUnit >= cost * (minMargin/100) - 0.0001){
+    badge.textContent = 'Safe — Meets Your Margin';
+    badge.className = 'safe-badge safe';
+  } else if(profitPerUnit >= 0){
+    badge.textContent = 'Caution — Below Target Margin';
+    badge.className = 'safe-badge risk';
+  } else {
+    badge.textContent = 'Loss — Do Not Offer';
+    badge.className = 'safe-badge risk';
+  }
+
+  const barPct = breakEvenDiscPct > 0 ? Math.min(100, (wantDisc / breakEvenDiscPct) * 100) : 100;
+  document.getElementById('marginBar').style.width = Math.max(0,barPct) + '%';
+}
+
+// Run once on load with default sample values
+calcEMI();
+calcDiscount();
+</script>
+
+</body>
+</html>
